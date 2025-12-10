@@ -16,7 +16,7 @@
       ],
       "credentials": {
         "openAiApi": {
-          "id": "RptPXqCyYOlQPQJD",
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
           "name": "OpenAi account"
         }
       }
@@ -37,7 +37,7 @@
       "notesInFlow": false,
       "credentials": {
         "postgres": {
-          "id": "PDW8PpwQnoVcRsCG",
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID",
           "name": "supabase_location"
         }
       }
@@ -74,7 +74,7 @@
       "webhookId": "7eceb90f-4d42-49fa-aa9e-8a3acf3af5c3",
       "credentials": {
         "httpHeaderAuth": {
-          "id": "HFRuMwXazrnemJ4B",
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
           "name": "Open Webui"
         }
       }
@@ -99,7 +99,7 @@
       "name": "OpenAI Chat Model1",
       "credentials": {
         "openAiApi": {
-          "id": "RptPXqCyYOlQPQJD",
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
           "name": "OpenAi account"
         }
       }
@@ -191,7 +191,7 @@
       "name": "Airtable_inventory",
       "credentials": {
         "airtableTokenApi": {
-          "id": "DJ9mwTSMvx7fBdId",
+          "id": "YOUR_AIRTABLE_CREDENTIAL_ID",
           "name": "Airtable account"
         }
       }
@@ -285,7 +285,7 @@
       "name": "Analyze Image",
       "credentials": {
         "openAiApi": {
-          "id": "RptPXqCyYOlQPQJD",
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
           "name": "OpenAi account"
         }
       }
@@ -395,7 +395,7 @@
       "name": "airtable_transactions",
       "credentials": {
         "airtableTokenApi": {
-          "id": "DJ9mwTSMvx7fBdId",
+          "id": "YOUR_AIRTABLE_CREDENTIAL_ID",
           "name": "Airtable account"
         }
       }
@@ -433,7 +433,7 @@
       "name": "airtable_returns",
       "credentials": {
         "airtableTokenApi": {
-          "id": "DJ9mwTSMvx7fBdId",
+          "id": "YOUR_AIRTABLE_CREDENTIAL_ID",
           "name": "Airtable account"
         }
       }
@@ -746,6 +746,6 @@
   "meta": {
     "instanceId": "fb506b66f33d08178d570aa45926e2a554bca1b2491f86ceeffb6e36f1fc02fd"
   },
-  "id": "emu1ZRQy6RAoyzZk",
+  "id": "YOUR_WORKFLOW_ID",
   "tags": []
 }
