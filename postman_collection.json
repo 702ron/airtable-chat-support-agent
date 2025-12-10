@@ -1,0 +1,48 @@
+{
+  "info": {
+    "name": "Airtable Chat Support Agent",
+    "_postman_id": "demo-collection",
+    "description": "Example request for the n8n webhook powering the AI support agent.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Chat Query",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{BEARER_TOKEN}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{WEBHOOK_URL}}",
+          "host": [
+            "{{WEBHOOK_URL}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sessionId\": \"demo-123\",\n  \"chatInput\": \"Sales totals for Maule between Oct 1 and Oct 31 by Photo Taker.\"\n}"
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "WEBHOOK_URL",
+      "value": "https://YOUR_N8N_HOST/webhook/ID"
+    },
+    {
+      "key": "BEARER_TOKEN",
+      "value": "your-demo-token"
+    }
+  ]
+}

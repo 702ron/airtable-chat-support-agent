@@ -1,0 +1,3 @@
+Product,Lot Number,Return Type,Return Notes,Return Created,Refund Amount,Date Refund Processed,Log
+Retro Game Console,4101,Return,Customer reports controller missing,2025-10-15T10:05:00,99.99,2025-10-16T09:00:00,"Inspected, restocked controller; processed refund"
+LED Monitor 27in,4350,Missing Item,Power cable not included,2025-10-18T12:22:00,0.0,,Sent replacement cable; no refund

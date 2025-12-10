@@ -1,0 +1,38 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Airtable Chat — Demo UI</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;padding:2rem;background:#f8fafc;color:#0f172a}
+.card{max-width:720px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:0 10px 30px rgba(2,6,23,.08);padding:1.25rem}
+h1{font-size:1.25rem;margin:0 0 1rem 0}.row{display:flex;gap:.5rem;margin-top:.75rem}
+input,button{font-size:1rem;padding:.75rem;border-radius:10px;border:1px solid #e2e8f0}input{flex:1}button{cursor:pointer}
+pre{background:#0b1220;color:#e5e7eb;border-radius:10px;padding:1rem;overflow:auto}small{color:#475569}.label{font-weight:600;font-size:.9rem;margin-top:1rem}
+</style></head>
+<body>
+<div class="card">
+  <h1>AI Support Agent — Airtable Chat (Demo)</h1>
+  <div class="row"><input id="webhook" placeholder="Webhook URL (https://.../webhook/...)" />
+                   <input id="token" placeholder="Bearer token" /></div>
+  <div class="row"><input id="session" placeholder="Session ID (e.g., demo-123)" /><button onclick="rnd()">Random</button></div>
+  <div class="row"><input id="input" placeholder="Ask a question (e.g., Sales totals for Maule last week by Photo Taker)" />
+                   <button onclick="send()">Send</button></div>
+  <div class="label">Response</div><pre id="out">—</pre>
+  <small>Tip: Use a mock demo base only. Do not expose real credentials.</small>
+</div>
+<script>
+function rnd(){document.getElementById('session').value='demo-'+Math.random().toString(36).slice(2,8)}
+async function send(){
+  const url=document.getElementById('webhook').value.trim();
+  const token=document.getElementById('token').value.trim();
+  const sessionId=(document.getElementById('session').value.trim()||'demo-123');
+  const chatInput=document.getElementById('input').value.trim();
+  const out=document.getElementById('out');
+  if(!url||!token||!chatInput){out.textContent='Please set webhook URL, bearer token, and a prompt.';return}
+  out.textContent='Running...';
+  try{
+    const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({sessionId,chatInput})});
+    const data=await res.json().catch(()=>({text:res.status+' '+res.statusText}));
+    out.textContent=JSON.stringify(data,null,2);
+  }catch(err){out.textContent='Error: '+err.message}
+}
+</script></body></html>

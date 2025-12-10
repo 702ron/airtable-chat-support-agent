@@ -1,0 +1,751 @@
+{
+  "name": "Demo Airtable Chat",
+  "nodes": [
+    {
+      "parameters": {
+        "model": "gpt-4.1-mini",
+        "options": {}
+      },
+      "id": "40f107d4-b6a5-4d9a-94b5-0d55e5c70d35",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        976,
+        688
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "RptPXqCyYOlQPQJD",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').item.json.body.sessionId }}"
+      },
+      "id": "f8d60a34-54fc-45a0-94c2-1029fee9e65a",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        688
+      ],
+      "notesInFlow": false,
+      "credentials": {
+        "postgres": {
+          "id": "PDW8PpwQnoVcRsCG",
+          "name": "supabase_location"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "ab614919-d21a-4b19-8e00-adf7936d300e",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1984,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "7eceb90f-4d42-49fa-aa9e-8a3acf3af5c3",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "2f25d3dd-7f47-48b2-8aea-60efe8af716a",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        208
+      ],
+      "webhookId": "7eceb90f-4d42-49fa-aa9e-8a3acf3af5c3",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HFRuMwXazrnemJ4B",
+          "name": "Open Webui"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1248,
+        208
+      ],
+      "id": "ff2045a9-20ee-4c61-bd15-9de168a879a5",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "RptPXqCyYOlQPQJD",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d264444f-c01a-4fa0-86a4-c0bf0e4c8537",
+              "name": "output",
+              "value": "={{ $json.output || $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1792,
+        224
+      ],
+      "id": "c5c1bfae-5216-4b0f-afad-8c8c3231c087",
+      "name": "Edit Fields (Set Output Field)"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.chatInput }}",
+        "options": {
+          "systemMessage": "=# Airtable Research Agent\nYou are an intelligent agent designed to research information across Airtable databases. Your primary function is to search and analyze data from multiple interconnected Airtable bases.\n\n## Process Flow\n1. Begin by searching the `airtable_inventory` database using the query information provided by the user.\n2. Determine the associated warehouse from the inventory results by checking the \"Warehouse\" field.\n3. **If the user’s query requests sales totals or revenue figures:**  \n   - Work exclusively from the Sales Transactions table.  \n   - Filter records where **Status = “Sold” OR “Shipped”**.  \n   - **Price** is the sales amount; sum this field for totals.  \n   - **Photo Taker** corresponds to the team member who originally input / processed the item (same as “Clerk” in Inventory).  \n   - If the user asks for totals **by person**, group the filtered records by **Photo Taker** and return the sum for each.  \n   - If a date range is supplied, apply it to **Date Sold**.\n\n## Database Schema\n\n### Inventory Table\nThe inventory database contains the following key fields:\n- Product Name (primary field, text): Detailed product description\n- Lot Number (number): Unique numeric identifier for inventory items\n- Location (text): Current storage location of item\n- Category (single select): Product category classification\n- MSRP (currency): Manufacturer's suggested retail price\n- Condition (single select): Item condition\n- Tags (multiple select): Multiple tags for classification and tracking\n- Location History (text): Record of location changes. This includes the worker that put the item in its location and at what time. \n- Status History (text): Record of status changes\n- Created DateTime (datetime): When the item was added to inventory\n- Last Modified (datetime): When the item was last updated\n- Auction Count (number): Number of times item has been in auction\n- Image 1-4 (attachments): Product photos\n- Notes (text): Additional product information\n- Clerk (text): Person who initally input or processed the item\n- Source (multiple select): Origin of the product\n\n### Sales Transactions Table\nThe Sales Transactions table contains:\n- Product (primary field, formula): Description of product sold\n- Status (single select): Current transaction status (Sold, Hold, Shipped, Returned, Restocked, Pending Return, Canceled, Missing)\n- Status Last Updated (datetime): When status was last changed\n- Date Sold (date): Purchase date\n- Price (currency): Amount paid by customer\n- Lot Number (number): Same as inventory lot number\n- Full Name (formula): Name of the customer that purchased the item\n- Invoice # (number): Sales Invoice Number\n- Payment Method (single select): Cash or Card\n- Photo Taker(text): Same as Clerk in the inventory table. Person who initally input or processed the item\n- Pick History(text): Person or people who picked the order including time it was picked\n- Category (single select): Product category classification\n- Paid (text) : If the order has been paid it will have the word \"Paid\" in this field, otherwise it will be blank\n- MSRP (currency): Manufacturer's suggested retail price\n- Condition (single select): Item condition\n> **Price** holds the sales amount; **Photo Taker** identifies who entered the item.\n\n\n### Returns Table\nThe Returns table contains:\n- Product (primary field, text): Description of returned product\n- Lot Number (number): Product identifier matching inventory\n- Return Type (single select): Category of return (Return, Restock, Missing Item, etc.)\n- Return Notes (text): Detailed reason for return\n- Return Created (datetime): Timestamp of return creation\n- Refund Amount (currency): Calculated refund including tax when applicable\n- Date Refund Processed (datetime): Date the refund was processed\n- Log (text): Information related to the return process\n\n## Available Tools\n- `airtable_inventory`: Primary database for all inventory items\n- `airtable_transactions`: Transaction records\n- `airtable_returns`: Return records\n- `airtable_transactions`: Transaction records\n\n## Response Format\nProvide comprehensive research results based on all relevant databases, ensuring all information is accurately linked across the appropriate warehouse databases. Include relevant details from inventory records, transaction history, and return information where available. \nWhen answering **sales-totals** queries, include:  \n- Total revenue would include only the items with the status of Sold, Hold, or Shipped and has been Paid (and per-Photo-Taker breakdown if requested)  \n- Count of qualifying transactions  \n- Any applied date filters"
+        }
+      },
+      "id": "6a4934ad-a23b-4b04-9db5-4859ddf36435",
+      "name": "Primary AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        1200,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Webhook').item.json.body.chatInput }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        1200,
+        0
+      ],
+      "id": "907d0cfd-f4bd-4329-bb40-2734dc3a1689",
+      "name": "Open WebUI Metadata LLM"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appVhPmOBAE5SwO8S",
+          "mode": "list",
+          "cachedResultName": "ERP Demo",
+          "cachedResultUrl": "https://airtable.com/appVhPmOBAE5SwO8S"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblbsv7Qn3HxXDvmo",
+          "mode": "list",
+          "cachedResultName": "Inventory",
+          "cachedResultUrl": "https://airtable.com/appVhPmOBAE5SwO8S/tblbsv7Qn3HxXDvmo"
+        },
+        "filterByFormula": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Filter_By_Formula', ``, 'string') }}",
+        "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}",
+        "options": {
+          "fields": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Output_Fields', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        1264,
+        688
+      ],
+      "id": "5fa16bb8-68fa-4db3-ad44-6eafc814e424",
+      "name": "Airtable_inventory",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "DJ9mwTSMvx7fBdId",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e4161c91-7c49-4951-96f0-9d0d4ab9575e",
+              "leftValue": "={{$json.body.chatInput.some(input => input.type === 'image_url')}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -192,
+        208
+      ],
+      "id": "61b24ca8-4e24-4a25-9065-59c7c35d0a8d",
+      "name": "If Image"
+    },
+    {
+      "parameters": {
+        "jsCode": "const base64 = $input.first().json.body.chatInput[1].image_url.url.split(\",\")[1];\nreturn [{ json: { base64 } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48,
+        -16
+      ],
+      "id": "c437826a-a1ce-4018-a9a6-43a0dd90838c",
+      "name": "Format Image"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "base64",
+        "options": {
+          "fileName": "barcode.jpeg",
+          "mimeType": "image/jpeg"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        272,
+        -16
+      ],
+      "id": "80d8b5f6-f623-4391-9aa0-e9fd80d45f2c",
+      "name": "Convert Image to File"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "CHATGPT-4O-LATEST"
+        },
+        "text": "convert this barcode to a number. Only return the value with no additional text. ",
+        "inputType": "base64",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        496,
+        -16
+      ],
+      "id": "2567cef7-32d6-4e28-9ece-0c1f480c2ebd",
+      "name": "Analyze Image",
+      "credentials": {
+        "openAiApi": {
+          "id": "RptPXqCyYOlQPQJD",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e9b3868a-85aa-49ce-b784-2e307ed9e2da",
+              "name": "body.chatInput",
+              "value": "=Lot Number {{ $json.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        -16
+      ],
+      "id": "099fa942-6976-47f3-a85d-55f55832674c",
+      "name": "Set Chat Input"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f5ebbd4f-6549-4a31-b3f8-eee7634dc439",
+              "leftValue": "={{ $('Webhook').item.json.body.sessionId }}",
+              "rightValue": "None",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        224
+      ],
+      "id": "98366b42-d77d-47a9-a80b-c5014f6a80dc",
+      "name": "If Session ID doesn't exist"
+    },
+    {
+      "parameters": {
+        "content": "## Process barcode Image if present",
+        "height": 256,
+        "width": 928
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        -96
+      ],
+      "id": "6d42135b-0dda-4302-8fc4-40d1fb526f80",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appVhPmOBAE5SwO8S",
+          "mode": "list",
+          "cachedResultName": "ERP Demo",
+          "cachedResultUrl": "https://airtable.com/appVhPmOBAE5SwO8S"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbltSr8tHkayMvBIx",
+          "mode": "list",
+          "cachedResultName": "Sales Transactions",
+          "cachedResultUrl": "https://airtable.com/appVhPmOBAE5SwO8S/tbltSr8tHkayMvBIx"
+        },
+        "filterByFormula": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Filter_By_Formula', ``, 'string') }}",
+        "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}",
+        "options": {
+          "fields": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Output_Fields', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        1424,
+        688
+      ],
+      "id": "794c8429-08f0-4517-bf71-0d753f431d1e",
+      "name": "airtable_transactions",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "DJ9mwTSMvx7fBdId",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appVhPmOBAE5SwO8S",
+          "mode": "list",
+          "cachedResultName": "ERP Demo",
+          "cachedResultUrl": "https://airtable.com/appVhPmOBAE5SwO8S"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblX3GoKbATMK6Bnz",
+          "mode": "list",
+          "cachedResultName": "Returns",
+          "cachedResultUrl": "https://airtable.com/appVhPmOBAE5SwO8S/tblX3GoKbATMK6Bnz"
+        },
+        "filterByFormula": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Filter_By_Formula', ``, 'string') }}",
+        "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}",
+        "options": {
+          "fields": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Output_Fields', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        1584,
+        688
+      ],
+      "id": "0612204e-c025-4531-932b-2675237c6ec9",
+      "name": "airtable_returns",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "DJ9mwTSMvx7fBdId",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Add ID and metadata for new chat\n",
+        "height": 432,
+        "width": 784,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        928,
+        -96
+      ],
+      "id": "8f373dbc-0c10-4b2d-be12-8a97626bc473",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Main chat for Airtable query",
+        "height": 480,
+        "width": 784,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        928,
+        368
+      ],
+      "id": "965ccf9b-d46b-4345-bc34-3f3113a21f9b",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Input from Open webui\n",
+        "height": 240,
+        "width": 384,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        128
+      ],
+      "id": "e48b2120-57b2-429c-ba61-9a6697177090",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Output to Open webui\n",
+        "height": 240,
+        "width": 384,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1744,
+        144
+      ],
+      "id": "59503fb7-4a79-420b-83e4-396020502c40",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "# Demo Airtable Chat – AI Support Agent\n\nThis workflow is a production-style AI support agent that connects a chat interface to live Airtable data. It turns natural‑language questions into structured database lookups and returns clear, accurate answers.\n\n## How It Works\n1. A user sends text (or a barcode image) through the chat UI.\n2. A webhook receives the message, validates auth, and passes it to the agent.\n3. If an image is included, the workflow extracts and decodes the barcode automatically.\n4. The AI agent interprets the question and selects the correct Airtable tool.\n5. The workflow queries Inventory, Transactions, or Returns based on intent.\n6. Results are combined, summarized, and returned in a clean `output` field.\n\n## Ideal Use Cases\n- Customer support chatbots  \n- Inventory/warehouse lookup assistants  \n- Sales analytics bots  \n- Internal helpdesk tools  \n- Any system that turns messy operational data into natural‑language answers\n",
+        "height": 704,
+        "width": 432
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -928,
+        -64
+      ],
+      "id": "257c7aec-841a-40ce-833f-3ec4debfcafb",
+      "name": "Sticky Note5"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.your-domain.com",
+            "user-agent": "python-requests/2.32.3",
+            "content-length": "2116",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, zstd",
+            "authorization": "Bearer YOUR_TOKEN_HERE",
+            "content-type": "application/json",
+            "x-forwarded-for": "172.25.0.1",
+            "x-forwarded-host": "n8n.your-domain.com",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "sessionId": "92ba722f-941e-4d11-8946-91b64afb4e8b",
+            "chatInput": "return policy\n\n#### Tools Available\n\n1. **Code Interpreter**: `<code_interpreter type=\"code\" lang=\"python\"></code_interpreter>`\n   - You have access to a Python shell that runs directly in the user's browser, enabling fast execution of code for analysis, calculations, or problem-solving.  Use it in this response.\n   - The Python code you write can incorporate a wide array of libraries, handle data manipulation or visualization, perform API calls for web-related tasks, or tackle virtually any computational challenge. Use this flexibility to **think outside the box, craft elegant solutions, and harness Python's full potential**.\n   - To use it, **you must enclose your code within `<code_interpreter type=\"code\" lang=\"python\">` XML tags** and stop right away. If you don't, the code won't execute. Do NOT use triple backticks.\n   - When coding, **always aim to print meaningful outputs** (e.g., results, tables, summaries, or visuals) to better interpret and verify the findings. Avoid relying on implicit outputs; prioritize explicit and clear print statements so the results are effectively communicated to the user.  \n   - After obtaining the printed output, **always provide a concise analysis, interpretation, or next steps to help the user understand the findings or refine the outcome further.**  \n   - If the results are unclear, unexpected, or require validation, refine the code and execute it again as needed. Always aim to deliver meaningful insights from the results, iterating if necessary.  \n   - **If a link to an image, audio, or any file is provided in markdown format in the output, ALWAYS regurgitate word for word, explicitly display it as part of the response to ensure the user can access it easily, do NOT change the link.**\n   - All responses should be communicated in the chat's primary language, ensuring seamless understanding. If the chat is multilingual, default to English for clarity.\n\nEnsure that the tools are effectively utilized to achieve the highest-quality analysis for the user."
+          },
+          "webhookUrl": "https://n8n.your-domain.com/webhook/your-webhook-id",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Primary AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Primary AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Open WebUI Metadata LLM",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields (Set Output Field)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Primary AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields (Set Output Field)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open WebUI Metadata LLM": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields (Set Output Field)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable_inventory": {
+      "ai_tool": [
+        [
+          {
+            "node": "Primary AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Image": {
+      "main": [
+        [
+          {
+            "node": "Format Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Session ID doesn't exist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Image": {
+      "main": [
+        [
+          {
+            "node": "Convert Image to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Image to File": {
+      "main": [
+        [
+          {
+            "node": "Analyze Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Image": {
+      "main": [
+        [
+          {
+            "node": "Set Chat Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Chat Input": {
+      "main": [
+        [
+          {
+            "node": "If Session ID doesn't exist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Session ID doesn't exist": {
+      "main": [
+        [
+          {
+            "node": "Open WebUI Metadata LLM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Primary AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "airtable_transactions": {
+      "ai_tool": [
+        [
+          {
+            "node": "Primary AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "airtable_returns": {
+      "ai_tool": [
+        [
+          {
+            "node": "Primary AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9e9c748d-c307-48f9-8e90-69bd9d71bc60",
+  "meta": {
+    "instanceId": "fb506b66f33d08178d570aa45926e2a554bca1b2491f86ceeffb6e36f1fc02fd"
+  },
+  "id": "emu1ZRQy6RAoyzZk",
+  "tags": []
+}
