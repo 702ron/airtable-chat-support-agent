@@ -4,6 +4,8 @@
 
 A production-style AI support agent that turns natural-language questions into structured Airtable lookups. Supports multi-table queries (Inventory, Sales Transactions, Returns), barcode image extraction, and session-aware chat via PostgreSQL memory.
 
+![n8n Workflow](screenshots/n8n_workflow.png)
+
 ## What I Built
 
 - **AI Agent Logic**: Designed the system prompt and tool-selection strategy for querying multiple Airtable tables
@@ -15,7 +17,18 @@ A production-style AI support agent that turns natural-language questions into s
 ## Demo
 
 - **Video (60–90s):** _[Add your Loom/YouTube link here]_
-- **Screenshots:** see [`/screenshots`](./screenshots)
+
+### Chat Interface
+
+![Chat UI](screenshots/chat_ui.png)
+
+### Workflow Execution
+
+![Execution View](screenshots/execution_view.png)
+
+### Airtable Data Source
+
+![Airtable Inventory](screenshots/airtable_inventory.png)
 
 ## Architecture
 
@@ -90,8 +103,7 @@ airtable-chat-support-agent/
     ├── chat_ui.png
     ├── n8n_workflow.png
     ├── airtable_inventory.png
-    ├── execution_view.png
-    └── result_output.png
+    └── execution_view.png
 ```
 
 ## Tech Stack
@@ -127,9 +139,9 @@ curl -X POST "https://your-n8n-instance/webhook/your-webhook-id" \
 
 ## Security Notes
 
-- Never commit live API keys, bearer tokens, or real PII
-- This repo uses mock data only
-- Review `n8n-workflow-export.json` for any credentials before committing
+- All API keys and secrets are stored in n8n credentials (not in workflow JSON)
+- The exported workflow file is sanitized with placeholder values
+- This repo uses mock data only — never commit real PII
 
 ## License
 
